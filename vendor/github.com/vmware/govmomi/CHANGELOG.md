@@ -1,5 +1,68 @@
 # changelog
 
+### 0.16.0 (2017-11-08)
+
+* Add support for SOAP request operation ID header
+
+* Moved ovf helpers from govc import.ovf command to ovf and nfc packages
+
+* Added guest/toolbox (client) package
+
+* Added toolbox package and toolbox command
+
+* Added simulator package and vcsim command
+
+### 0.15.0 (2017-06-19)
+
+* WaitOptions.MaxWaitSeconds is now optional
+
+* Support removal of ExtraConfig entries
+
+* GuestPosixFileAttributes OwnerId and GroupId fields are now pointers,
+  rather than omitempty ints to allow chown with root uid:gid
+
+* Updated examples/ using view package
+
+* Add DatastoreFile.TailFunc method
+
+* Export VirtualMachine.FindSnapshot method
+
+* Add AuthorizationManager {Enable,Disable}Methods
+
+* Add PBM client
+
+### 0.14.0 (2017-04-08)
+
+* Add view.ContainerView type and methods
+
+* Add Collector.RetrieveWithFilter method
+
+* Add property.Filter type
+
+* Implement EthernetCardBackingInfo for OpaqueNetwork
+
+* Finder: support changing object root in find mode
+
+* Add VirtualDiskManager.QueryVirtualDiskInfo
+
+* Add performance.Manager APIs
+
+### 0.13.0 (2017-03-02)
+
+* Add DatastoreFileManager API wrapper
+
+* Add HostVsanInternalSystem API wrappers
+
+* Add Container support to view package
+
+* Finder supports Folder recursion without specifying a path
+
+* Add VirtualMachine.QueryConfigTarget method
+
+* Add device option to VirtualMachine.WaitForNetIP
+
+* Remove _Task suffix from vapp methods
+
 ### 0.12.1 (2016-12-19)
 
 * Add DiagnosticLog helper

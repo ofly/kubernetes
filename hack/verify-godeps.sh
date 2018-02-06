@@ -18,39 +18,20 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# As of go 1.6, the vendor experiment is enabled by default.
-export GO15VENDOREXPERIMENT=1
-
-#### HACK ####
-# Sometimes godep just can't handle things. This lets use manually put
-# some deps in place first, so godep won't fall over.
-preload-dep() {
-  org="$1"
-  project="$2"
-  sha="$3"
-  # project_dir ($4) is optional, if unset we will generate it
-  if [[ -z ${4:-} ]]; then
-    project_dir="${GOPATH}/src/${org}/${project}.git"
-  else
-    project_dir="${4}"
-  fi
-
-  echo "**HACK** preloading dep for ${org} ${project} at ${sha} into ${project_dir}"
-  git clone "https://${org}/${project}" "${project_dir}" > /dev/null 2>&1
-  pushd "${project_dir}" > /dev/null
-    git checkout "${sha}"
-  popd > /dev/null
-}
-
 KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
 source "${KUBE_ROOT}/hack/lib/init.sh"
 
 readonly branch=${1:-${KUBE_VERIFY_GIT_BRANCH:-master}}
 if ! [[ ${KUBE_FORCE_VERIFY_CHECKS:-} =~ ^[yY]$ ]] && \
   ! kube::util::has_changes_against_upstream_branch "${branch}" 'Godeps/' && \
-  ! kube::util::has_changes_against_upstream_branch "${branch}" 'vendor/'; then
+  ! kube::util::has_changes_against_upstream_branch "${branch}" 'vendor/' && \
+  ! kube::util::has_changes_against_upstream_branch "${branch}" 'hack/lib/' && \
+  ! kube::util::has_changes_against_upstream_branch "${branch}" 'hack/.*godep'; then
   exit 0
 fi
+
+# Ensure we have the right godep version available
+kube::util::ensure_godep_version
 
 if [[ -z ${TMP_GOPATH:-} ]]; then
   # Create a nice clean place to put our new godeps
@@ -85,13 +66,8 @@ _kubetmp="${_kubetmp}/kubernetes"
 export GOPATH="${_tmpdir}"
 
 pushd "${_kubetmp}" 2>&1 > /dev/null
-  kube::util::ensure_godep_version v79
-
-  export GOPATH="${GOPATH}:${_kubetmp}/staging"
-  # Fill out that nice clean place with the kube godeps
-  echo "Starting to download all kubernetes godeps. This takes a while"
-  godep restore
-  echo "Download finished"
+  # Restore the Godeps into our temp directory
+  hack/godep-restore.sh
 
   # Destroy deps in the copy of the kube tree
   rm -rf ./Godeps ./vendor
@@ -125,7 +101,7 @@ pushd "${KUBE_ROOT}" 2>&1 > /dev/null
     ret=1
   fi
 
-  if ! _out="$(diff -Naupr -x "BUILD" -x "AUTHORS*" -x "CONTRIBUTORS*" vendor ${_kubetmp}/vendor)"; then
+  if ! _out="$(diff -Naupr -x "BUILD" -x "OWNERS" -x "AUTHORS*" -x "CONTRIBUTORS*" vendor ${_kubetmp}/vendor)"; then
     echo "Your vendored results are different:"
     echo "${_out}"
     echo "Godeps Verify failed."
